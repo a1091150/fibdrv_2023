@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include "bn.h"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("National Cheng Kung University, Taiwan");
@@ -26,21 +27,28 @@ static DEFINE_MUTEX(fib_mutex);
 
 static long long fib_sequence(long long k)
 {
-    unsigned long long mask = ULLONG_MAX ^ (ULLONG_MAX >> 1);
-    mask >>= __builtin_clz(k);
+    bn a, b, c;
+    bn_new(&a, 2);
+    bn_new(&b, 2);
+    bn_new(&c, 2);
+    if (!a.num || !b.num || !c.num)
+        goto tail;
 
-    unsigned long long a = 0, b = 1;  // fib(0), fib(1)
-    for (; mask; mask >>= 1) {
-        unsigned long long c = a * (2 * b - a);
-        unsigned long long d = a * a + b * b;
-
-        int aset = !(mask & k);
-        int bset = !!(mask & k);
-        a = d ^ ((c ^ d) & -aset);
-        b = d + (c & -bset);
+    for (int i = 0; i < k; i++) {
+        bn_add(&a, &b, &c);
+        if (!c.num)
+            goto tail;
+        bn_swap(&a, &b);
+        bn_swap(&c, &b);
+        /* It does not need to set zero in most of the time. */
+        bn_set_zero(&c);
     }
 
-    return a;
+tail:
+    bn_free(&a);
+    bn_free(&b);
+    bn_free(&c);
+    return 0;
 }
 
 static int fib_open(struct inode *inode, struct file *file)

@@ -12,6 +12,8 @@ void bn_free(bn *p)
     kfree(p->num);
 }
 
+void bn_cpy(bn *dest, bn *src) {}
+
 static __u32 bn_clz(const bn *p)
 {
     __u32 cnt = 0;
@@ -49,9 +51,9 @@ static bool bn_resize(bn *p, __u32 size)
 }
 
 
-void bn_set_zero(bn *p)
+void bn_set_zero(bn *a)
 {
-    memset(p->num, 0, sizeof(__u32) * p->size);
+    memset(a->num, 0, sizeof(__u32) * a->size);
 }
 
 void bn_swap(bn *a, bn *b)
@@ -85,3 +87,5 @@ void bn_add(bn *a, bn *b, bn *c)
         carry >>= 32;
     }
 }
+
+void bn_lshift(bn *a, __u32 s) {}

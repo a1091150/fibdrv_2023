@@ -40,3 +40,6 @@ check: all
 	$(MAKE) unload
 	@diff -u out scripts/expected.txt && $(call pass)
 	@scripts/verify.py
+
+ufib:
+	$(CC) -o ufib.c bn.c -D _USERSPACEFIB

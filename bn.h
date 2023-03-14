@@ -1,9 +1,24 @@
 #ifndef _BN_H_
 #define _BN_H_
+#ifndef _USERSPACEFIB
 #include <linux/gfp.h>
 #include <linux/slab.h>
 #include <linux/stddef.h>
 #include <linux/types.h>
+#else
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#define kmalloc(size, flags) (malloc(size))
+#define krealloc(ptr, size, flags) (realloc((ptr), (size)))
+#define kfree(p) (free(p))
+typedef unsigned int __u32;
+typedef signed int __s32;
+typedef unsigned long __u64;
+typedef signed long __s64;
+#define GFP_KERNEL (0)
+#endif
+
 typedef struct _bn {
     __u32 size;
     __u32 alloc;

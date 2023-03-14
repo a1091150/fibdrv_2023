@@ -2,7 +2,7 @@
 bool bn_new(bn *p, __u32 size)
 {
     p->num = kmalloc(sizeof(__u32) * size, GFP_KERNEL);
-    p->size = 0;
+    p->size = p->num ? size : 0;
     return !!p->num;
 }
 

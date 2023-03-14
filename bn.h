@@ -29,9 +29,13 @@ typedef struct _bn {
 #define BN_MAX(a, b) (a) > (b) ? (a) : (b)
 bool bn_new(bn *p, __u32 size);
 void bn_free(bn *p);
+void bn_cpy(bn *dest, bn *src);
 
 void bn_swap(bn *a, bn *b);
 
 void bn_add(bn *a, bn *b, bn *c);
-void bn_set_zero(bn *p);
+void bn_diff(bn *a, bn *b, bn *c);
+void bn_lshift(bn *a, __u32 s);
+void bn_mult(bn *a, bn *b, bn *c);
+void bn_set_zero(bn *a);
 #endif /* !_BN_H_*/

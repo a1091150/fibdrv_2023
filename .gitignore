@@ -29,6 +29,9 @@ dkms.conf
 # test-oriented
 client
 out
+a.out
 
+# userspace fibonacci
+ufib.out
 # Editor
 .vscode

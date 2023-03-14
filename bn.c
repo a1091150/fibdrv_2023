@@ -69,11 +69,13 @@ void bn_add(bn *a, bn *b, bn *c)
     digits = BN_DIV_ROUND(digits, 32) + !digits;
     bn_resize(c, digits);
 
-    if (a->size < b->size) {
+    bool isSwapped = a->size < b->size;
+    if (isSwapped) {
         bn_swap(a, b);
     }
     __u64 carry = 0;
-    for (__u32 i = 0; i < b->size; i++) {
+    __u32 i = 0;
+    for (; i < b->size; i++) {
         __u64 x = a->num[i];
         __u64 y = b->num[i];
         carry += x + y;
@@ -81,10 +83,43 @@ void bn_add(bn *a, bn *b, bn *c)
         carry >>= 32;
     }
 
-    for (__u32 i = b->size; i < a->size && carry; i++) {
+    for (; i < a->size && carry; i++) {
         carry += a->num[i];
         c->num[i] = carry;
         carry >>= 32;
+    }
+
+    if (carry) {
+        c->num[i] = carry;
+    }
+
+    if (isSwapped) {
+        bn_swap(a, b);
+    }
+}
+
+void bn_diff(bn *a, bn *b, bn *c) {}
+
+void bn_mult(bn *a, bn *b, bn *c)
+{
+    __u32 digits = bn_msb(a) + bn_msb(b);
+    digits = BN_DIV_ROUND(digits, 32) + !digits;
+    bn_resize(c, digits);
+    if (!c->num)
+        return;
+
+    bn_set_zero(c);
+    for (__u32 i = 0; i < a->size; i++) {
+        for (__u32 j = 0; j < b->size; j++) {
+            __u64 carry = (__u64) a->num[i] * (__u64) b->num[j];
+            __u32 k = i + j;
+            do {
+                __u64 s = carry + c->num[k];
+                c->num[k] = s;
+                carry = s >> 32;
+                k++;
+            } while (k < c->size && carry);
+        }
     }
 }
 

@@ -29,7 +29,7 @@ dkms.conf
 # test-oriented
 client
 out
-a.out
+*.out
 
 # userspace fibonacci
 ufib.out

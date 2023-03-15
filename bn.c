@@ -1,19 +1,4 @@
 #include "bn.h"
-bool bn_new(bn *p, __u32 size)
-{
-    p->num = kmalloc(sizeof(__u32) * size, GFP_KERNEL);
-    p->size = p->num ? size : 0;
-    return !!p->num;
-}
-
-void bn_free(bn *p)
-{
-    p->size = 0;
-    kfree(p->num);
-}
-
-void bn_cpy(bn *dest, bn *src) {}
-
 static __u32 bn_clz(const bn *p)
 {
     __u32 cnt = 0;
@@ -50,6 +35,26 @@ static bool bn_resize(bn *p, __u32 size)
     return true;
 }
 
+bool bn_new(bn *p, __u32 size)
+{
+    p->num = kmalloc(sizeof(__u32) * size, GFP_KERNEL);
+    p->size = p->num ? size : 0;
+    return !!p->num;
+}
+
+void bn_free(bn *p)
+{
+    p->size = 0;
+    kfree(p->num);
+}
+
+
+
+void bn_cpy(bn *dest, bn *src)
+{
+    bn_resize(dest, src->size);
+    memcpy(dest, src, src->size);
+}
 
 void bn_set_zero(bn *a)
 {
@@ -122,5 +127,20 @@ void bn_mult(bn *a, bn *b, bn *c)
         }
     }
 }
+/* Maximum of left shift size less than 32*/
+void bn_lshift(bn *a, __u32 s)
+{
+    s = s & 0b11111;
+    __u64 carry = 0;
+    __u32 i = 0;
+    for (; i < a->size; i++) {
+        __u64 x = a->num[i];
+        a->num[i] = (x << s) | carry;
+        carry = x >> (32 - s);
+    }
 
-void bn_lshift(bn *a, __u32 s) {}
+    if (carry) {
+        bn_resize(a, i + 1);
+        a->num[i] = carry;
+    }
+}

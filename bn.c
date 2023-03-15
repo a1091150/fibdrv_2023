@@ -5,6 +5,7 @@ static __u32 bn_clz(const bn *p)
     for (__s64 i = p->size - 1; i >= 0; i--) {
         if (p->num[i]) {
             cnt += __builtin_clz(p->num[i]);
+            break;
         } else {
             cnt += 32;
         }

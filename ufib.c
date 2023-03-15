@@ -33,7 +33,38 @@ char *bn_to_string(const bn *src)
     return s;
 }
 
-static test_bn_cpy()
+static void test_bn_cmp()
+{
+    bn a, b;
+    bn_new(&a, 5);
+    bn_new(&b, 5);
+    if (!a.num)
+        goto tail;
+
+    bn_set_zero(&a);
+    bn_set_zero(&b);
+
+    a.num[0] = 2;
+    a.num[1] = 1;
+    a.num[2] = 1;
+    a.num[3] = 1023;
+
+    b.num[0] = 1;
+    b.num[1] = 1;
+    b.num[2] = 1;
+    b.num[3] = 1023;
+    int c = bn_cmp(&a, &b);
+    int d = bn_cmp(&b, &a);
+    printf("Compare: %d\n", c);
+    printf("Compare: %d\n", d);
+
+tail:
+    bn_free(&a);
+    bn_free(&b);
+}
+
+
+static void test_bn_cpy()
 {
     bn a, b;
     bn_new(&a, 2);
@@ -50,7 +81,7 @@ tail:
     bn_free(&b);
 }
 
-static test_bn_diff()
+static void test_bn_diff()
 {
     bn a, b, c;
     bn_new(&a, 2);
@@ -61,7 +92,15 @@ static test_bn_diff()
     bn_set_zero(&a);
     bn_set_zero(&b);
     bn_set_zero(&c);
+    a.num[0] = 32;
+    a.num[1] = 3;
+    b.num[0] = 3;
+    b.num[1] = 4;
+
     bn_diff(&a, &b, &c);
+    char *cp = bn_to_string(&c);
+    printf("%s\n", cp);
+    free(cp);
 tail:
     bn_free(&a);
     bn_free(&b);
@@ -95,6 +134,7 @@ static void test_bn_lshift()
 tail:
     bn_free(&a);
 }
+
 static void test_bn_add(long long k)
 {
     bn a, b, c;
@@ -164,6 +204,7 @@ tail:
 
 int main()
 {
+    test_bn_cmp();
     test_bn_diff();
     test_bn_cpy();
     test_bn_lshift();

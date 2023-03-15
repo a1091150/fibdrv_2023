@@ -71,6 +71,11 @@ void bn_free(bn *p)
 
 void bn_cpy(bn *dest, bn *src)
 {
+    if (dest->size > src->size) {
+        memcpy(dest, src, src->size);
+        memset(dest + src->size, 0, dest->size - src->size);
+        return;
+    }
     bn_resize(dest, src->size);
     memcpy(dest, src, src->size);
 }
@@ -122,7 +127,42 @@ void bn_add(bn *a, bn *b, bn *c)
     }
 }
 
-void bn_diff(bn *a, bn *b, bn *c) {}
+void bn_diff(bn *a, bn *b, bn *c)
+{
+    int abcmp = bn_cmp(a, b);
+    if (abcmp == 0) {
+        bn_set_zero(c);
+        return;
+    }
+    if (abcmp == 1)
+        bn_swap(a, b);
+
+    bn_resize(c, a->size);
+
+    __u64 carry = 0;
+    __u32 i = 0;
+
+    for (; i < b->size; i++) {
+        __u64 x = (__u64) a->num[i] - (__u64) b->num[i] - carry;
+        __u64 sign = !!(x >> 32);
+        c->num[i] = x + (sign << 32);
+        carry = sign;
+    }
+
+    for (; i < a->size && carry; i++) {
+        __u64 x = (__u64) a->num[i] - carry;
+        __u64 sign = !!(x >> 32);
+        c->num[i] = x + (sign << 32);
+        carry = sign;
+    }
+
+    if (carry) {
+        c->num[i] -= carry;
+    }
+
+    if (abcmp == 1)
+        bn_swap(a, b);
+}
 
 void bn_mult(bn *a, bn *b, bn *c)
 {

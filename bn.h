@@ -33,6 +33,13 @@ void bn_cpy(bn *dest, bn *src);
 
 void bn_swap(bn *a, bn *b);
 
+/*
+    If a < b, return 1.
+    If a = b, return 0.
+    If a > b, return -1;
+*/
+int bn_cmp(bn *a, bn *b);
+
 void bn_add(bn *a, bn *b, bn *c);
 void bn_diff(bn *a, bn *b, bn *c);
 void bn_lshift(bn *a, __u32 s);

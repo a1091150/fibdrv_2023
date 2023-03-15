@@ -36,6 +36,24 @@ static bool bn_resize(bn *p, __u32 size)
     return true;
 }
 
+int bn_cmp(bn *a, bn *b)
+{
+    __u32 abits = bn_msb(a);
+    __u32 bbits = bn_msb(b);
+
+    if (abits == bbits) {
+        __u32 i = abits >> 5;
+        while (i > 0 && a->num[i] == b->num[i]) {
+            i--;
+        }
+
+        if (a->num[i] == b->num[i])
+            return 0;
+        return ((a->num[i] < b->num[i]) << 1) - 1;
+    }
+    return ((abits < bbits) << 1) - 1;
+}
+
 bool bn_new(bn *p, __u32 size)
 {
     p->num = kmalloc(sizeof(__u32) * size, GFP_KERNEL);

@@ -33,21 +33,67 @@ char *bn_to_string(const bn *src)
     return s;
 }
 
-static void test_bn_cpy()
+static test_bn_cpy()
+{
+    bn a, b;
+    bn_new(&a, 2);
+    bn_new(&b, 2);
+    if (!a.num)
+        goto tail;
+
+    bn_cpy(&a, &b);
+    bn_set_zero(&a);
+    bn_set_zero(&b);
+
+tail:
+    bn_free(&a);
+    bn_free(&b);
+}
+
+static test_bn_diff()
 {
     bn a, b, c;
     bn_new(&a, 2);
     bn_new(&b, 2);
     bn_new(&c, 2);
-    if (!a.num || !b.num || !c.num)
+    if (!a.num)
         goto tail;
-    bn_cpy(&a, &b);
+    bn_set_zero(&a);
+    bn_set_zero(&b);
+    bn_set_zero(&c);
     bn_diff(&a, &b, &c);
-    bn_lshift(&a, &b);
 tail:
     bn_free(&a);
     bn_free(&b);
     bn_free(&c);
+}
+
+
+static void test_bn_lshift()
+{
+    bn a;
+    bn_new(&a, 2);
+    if (!a.num)
+        goto tail;
+
+    bn_set_zero(&a);
+    a.num[0] = -1;
+    a.num[1] = -1;
+
+    {
+        char *ap = bn_to_string(&a);
+        printf("a: %s\n", ap);
+        free(ap);
+    }
+    bn_lshift(&a, 10);
+    {
+        char *ap = bn_to_string(&a);
+        printf("a: %s\n", ap);
+        free(ap);
+    }
+
+tail:
+    bn_free(&a);
 }
 static void test_bn_add(long long k)
 {
@@ -118,7 +164,9 @@ tail:
 
 int main()
 {
+    test_bn_diff();
     test_bn_cpy();
+    test_bn_lshift();
     test_bn_add(91);
     test_bn_add(92);
     test_bn_mult();

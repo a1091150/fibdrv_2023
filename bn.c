@@ -93,25 +93,24 @@ void bn_swap(bn *a, bn *b)
 
 void bn_add(bn *a, bn *b, bn *c)
 {
-    __u32 digits = BN_MAX(bn_msb(a), bn_msb(b));
+    __u32 digits = BN_MAX(bn_msb(a), bn_msb(b)) + 1;
     digits = BN_DIV_ROUND(digits, 32) + !digits;
     bn_resize(c, digits);
 
-    bool isSwapped = a->size < b->size;
-    if (isSwapped) {
-        bn_swap(a, b);
-    }
+    bn aa = *a;
+    bn bb = *b;
+    if (a->size < b->size)
+        bn_swap(&aa, &bb);
+
     __u64 carry = 0;
     __u32 i = 0;
     for (; i < b->size; i++) {
-        __u64 x = a->num[i];
-        __u64 y = b->num[i];
-        carry += x + y;
+        carry += (__u64) aa.num[i] + (__u64) bb.num[i];
         c->num[i] = carry;
         carry >>= 32;
     }
 
-    for (; i < a->size && carry; i++) {
+    for (; i < a->size; i++) {
         carry += a->num[i];
         c->num[i] = carry;
         carry >>= 32;
@@ -133,23 +132,26 @@ void bn_diff(bn *a, bn *b, bn *c)
         bn_set_zero(c);
         return;
     }
+    bn aa = *a;
+    bn bb = *b;
+
     if (abcmp == 1)
-        bn_swap(a, b);
+        bn_swap(&aa, &bb);
 
     bn_resize(c, a->size);
 
     __u64 carry = 0;
     __u32 i = 0;
 
-    for (; i < b->size; i++) {
-        __u64 x = (__u64) a->num[i] - (__u64) b->num[i] - carry;
+    for (; i < bb.size; i++) {
+        __u64 x = (__u64) aa.num[i] - (__u64) bb.num[i] - carry;
         __u64 sign = !!(x >> 32);
         c->num[i] = x + (sign << 32);
         carry = sign;
     }
 
-    for (; i < a->size && carry; i++) {
-        __u64 x = (__u64) a->num[i] - carry;
+    for (; i < aa.size; i++) {
+        __u64 x = (__u64) aa.num[i] - carry;
         __u64 sign = !!(x >> 32);
         c->num[i] = x + (sign << 32);
         carry = sign;

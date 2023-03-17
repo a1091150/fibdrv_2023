@@ -119,10 +119,6 @@ void bn_add(bn *a, bn *b, bn *c)
     if (carry) {
         c->num[i] = carry;
     }
-
-    if (isSwapped) {
-        bn_swap(a, b);
-    }
 }
 
 void bn_diff(bn *a, bn *b, bn *c)
@@ -156,18 +152,11 @@ void bn_diff(bn *a, bn *b, bn *c)
         c->num[i] = x + (sign << 32);
         carry = sign;
     }
-
-    if (carry) {
-        c->num[i] -= carry;
-    }
-
-    if (abcmp == 1)
-        bn_swap(a, b);
 }
 
 void bn_mult(bn *a, bn *b, bn *c)
 {
-    __u32 digits = bn_msb(a) + bn_msb(b);
+    __u32 digits = bn_msb(a) + bn_msb(b) + 1;
     digits = BN_DIV_ROUND(digits, 32) + !digits;
     bn_resize(c, digits);
     if (!c->num)

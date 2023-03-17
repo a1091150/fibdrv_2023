@@ -27,11 +27,10 @@ static bool bn_resize(bn *p, __u32 size)
     if (p->size >= size)
         return true;
 
-    size_t s = sizeof(__u32) * p->size;
-    p->num = krealloc(p->num, s, GFP_KERNEL);
+    p->num = krealloc(p->num, sizeof(__u32) * size, GFP_KERNEL);
     if (!p->num)
         return false;
-    memset(p->num + p->size, 0, s);
+    memset(p->num + p->size, 0, sizeof(__u32) * (size - p->size));
     p->size = size;
     return true;
 }
@@ -72,12 +71,12 @@ void bn_free(bn *p)
 void bn_cpy(bn *dest, bn *src)
 {
     if (dest->size > src->size) {
-        memcpy(dest, src, src->size);
-        memset(dest + src->size, 0, dest->size - src->size);
+        memcpy(dest->num, src->num, sizeof(__u32) * src->size);
+        memset(dest->num + src->size, 0, dest->size - src->size);
         return;
     }
     bn_resize(dest, src->size);
-    memcpy(dest, src, src->size);
+    memcpy(dest->num, src->num, sizeof(__u32) * src->size);
 }
 
 void bn_set_zero(bn *a)

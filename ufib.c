@@ -33,6 +33,69 @@ char *bn_to_string(const bn *src)
     return s;
 }
 
+void bn_print(const bn *src)
+{
+    char *sp = bn_to_string(src);
+    printf("%s\n", sp);
+    free(sp);
+}
+
+static void test_bn_fast_doubling(__u64 k)
+{
+    __u64 mask = 1UL << 63;
+    mask >>= __builtin_clzl(k);
+    bn a, b, c, d;
+    bn_new(&a, 1);
+    bn_new(&b, 1);
+    bn_new(&c, 1);
+    bn_new(&d, 1);
+    if (!a.num || !b.num || !c.num || !d.num)
+        goto tail;
+    bn_set_zero(&a);
+    bn_set_zero(&b);
+    bn_set_zero(&c);
+    bn_set_zero(&d);
+
+    a.num[0] = 0;
+    b.num[0] = 1;
+
+    __u64 current = 0;
+    for (; mask; mask >>= 1) {
+        bn_cpy(&d, &b);
+        bn_lshift(&d, 1);
+        bn_diff(&d, &a, &d);
+        bn_mult(&a, &d, &c);
+
+        bn_mult(&a, &a, &d);
+        bn_mult(&b, &b, &a);
+        bn_add(&d, &a, &d);
+
+        if (mask & k) {
+            current = (current << 1) + 1;
+            bn_add(&c, &d, &b);
+            bn_swap(&a, &d);
+        } else {
+            current <<= 1;
+            bn_swap(&c, &a);
+            bn_swap(&d, &b);
+        }
+
+        printf("%lu\n", current);
+        bn_print(&a);
+        bn_print(&b);
+        printf("\n");
+    }
+
+    bn_print(&a);
+    bn_print(&b);
+    printf("\n");
+tail:
+    bn_free(&a);
+    bn_free(&b);
+    bn_free(&c);
+    bn_free(&d);
+}
+
 static void test_bn_cmp()
 {
     bn a, b;
@@ -81,26 +144,30 @@ tail:
     bn_free(&b);
 }
 
-static void test_bn_diff()
+static void test_bn_diff(__u64 k)
 {
     bn a, b, c;
-    bn_new(&a, 2);
-    bn_new(&b, 2);
-    bn_new(&c, 2);
+    bn_new(&a, 1);
+    bn_new(&b, 1);
+    bn_new(&c, 1);
     if (!a.num)
         goto tail;
     bn_set_zero(&a);
     bn_set_zero(&b);
     bn_set_zero(&c);
-    a.num[0] = 32;
-    a.num[1] = 3;
-    b.num[0] = 3;
-    b.num[1] = 4;
+    a.num[0] = 0;
+    b.num[0] = 1;
+
+    for (int i = 0; i < k; i++) {
+        bn_add(&a, &b, &c);
+        if (!c.num)
+            goto tail;
+        bn_swap(&a, &b);
+        bn_swap(&c, &b);
+    }
 
     bn_diff(&a, &b, &c);
-    char *cp = bn_to_string(&c);
-    printf("%s\n", cp);
-    free(cp);
+    bn_print(&c);
 tail:
     bn_free(&a);
     bn_free(&b);
@@ -138,9 +205,9 @@ tail:
 static void test_bn_add(long long k)
 {
     bn a, b, c;
-    bn_new(&a, 2);
-    bn_new(&b, 2);
-    bn_new(&c, 2);
+    bn_new(&a, 1);
+    bn_new(&b, 1);
+    bn_new(&c, 1);
     if (!a.num || !b.num || !c.num)
         goto tail;
 
@@ -156,17 +223,9 @@ static void test_bn_add(long long k)
             goto tail;
         bn_swap(&a, &b);
         bn_swap(&c, &b);
-        /* It does not need to set zero in most of the time. */
-        bn_set_zero(&c);
     }
 
-    char *ap = bn_to_string(&a);
-    char *bp = bn_to_string(&b);
-    printf("%lld a: %s\n", k, ap);
-    printf("%lld b: %s\n\n", k + 1, bp);
-    free(ap);
-    free(bp);
-
+    bn_print(&a);
 tail:
     bn_free(&a);
     bn_free(&b);
@@ -193,9 +252,7 @@ static void test_bn_mult()
     b.num[1] = f90 >> 32;
     bn_mult(&a, &b, &c);
 
-    char *cp = bn_to_string(&c);
-    printf("89 * 90 c: %s\n\n", cp);
-    free(cp);
+    bn_print(&c);
 tail:
     bn_free(&a);
     bn_free(&b);
@@ -205,11 +262,13 @@ tail:
 int main()
 {
     test_bn_cmp();
-    test_bn_diff();
+    test_bn_diff(95);
+    test_bn_add(94);
     test_bn_cpy();
     test_bn_lshift();
-    test_bn_add(91);
     test_bn_add(92);
     test_bn_mult();
+    test_bn_fast_doubling(92);
+    // test_bn_fast_doubling(93);
     return 0;
 }

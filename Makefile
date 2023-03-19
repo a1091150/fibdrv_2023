@@ -47,3 +47,8 @@ ufib:
 uplot: ufib
 	./ufib.out > ./ufib_time.ut
 	gnuplot scripts/ufib_plot.gp
+
+tclient: 
+	$(CC) tclient.c -o tclient.out
+	sudo ./tclient.out > ./kfib_time.ut
+	gnuplot scripts/kfib_plot.gp

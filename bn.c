@@ -193,3 +193,36 @@ void bn_lshift(bn *a, __u32 s)
         a->num[i] = carry;
     }
 }
+
+char *bn_to_string(bn *a)
+{
+    // log10(x) = log2(x) / log2(10) ~= log2(x) / 3.322
+    size_t len = (8 * sizeof(__u32) * a->size) / 3 + 2 + 1;
+    char *s = kmalloc(len, GFP_KERNEL);
+    char *p = s;
+
+    memset(s, '0', len - 1);
+    s[len - 1] = '\0';
+
+    /* src.number[0] contains least significant bits */
+    for (int i = a->size - 1; i >= 0; i--) {
+        /* walk through every bit of bn */
+        for (unsigned int d = 1U << 31; d; d >>= 1) {
+            /* binary -> decimal string */
+            int carry = !!(d & a->num[i]);
+            for (int j = len - 2; j >= 0; j--) {
+                s[j] += s[j] - '0' + carry;
+                carry = (s[j] > '9');
+                if (carry)
+                    s[j] -= 10;
+            }
+        }
+    }
+    // skip leading zero
+    while (p[0] == '0' && p[1] != '\0') {
+        p++;
+    }
+
+    memmove(s, p, strlen(p) + 1);
+    return s;
+}

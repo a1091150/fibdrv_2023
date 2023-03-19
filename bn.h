@@ -45,4 +45,5 @@ void bn_diff(bn *a, bn *b, bn *c);
 void bn_lshift(bn *a, __u32 s);
 void bn_mult(bn *a, bn *b, bn *c);
 void bn_set_zero(bn *a);
+char *bn_to_string(bn *a);
 #endif /* !_BN_H_*/

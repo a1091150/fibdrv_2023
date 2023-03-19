@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/uaccess.h>
 #include "bn.h"
 
 MODULE_LICENSE("Dual MIT/GPL");
@@ -18,37 +19,58 @@ MODULE_VERSION("0.1");
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
-#define MAX_LENGTH 92
+#define MAX_LENGTH 500
 
 static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 
-static long long fib_sequence(long long k)
+static bn fib_fast_doubling(__u64 k)
 {
-    bn a, b, c;
-    bn_new(&a, 2);
-    bn_new(&b, 2);
-    bn_new(&c, 2);
-    if (!a.num || !b.num || !c.num)
-        goto tail;
+    __u64 mask = 1UL << 63;
+    mask >>= __builtin_clzl(k);
+    bn a, b, c, d;
+    bn_new(&a, 1);
+    bn_new(&b, 1);
+    bn_new(&c, 1);
+    bn_new(&d, 1);
 
-    for (int i = 0; i < k; i++) {
-        bn_add(&a, &b, &c);
-        if (!c.num)
-            goto tail;
-        bn_swap(&a, &b);
-        bn_swap(&c, &b);
-        /* It does not need to set zero in most of the time. */
-        bn_set_zero(&c);
+    if (!a.num || !b.num || !c.num || !d.num)
+        goto tail;
+    bn_set_zero(&a);
+    bn_set_zero(&b);
+    bn_set_zero(&c);
+    bn_set_zero(&d);
+    a.num[0] = 0;
+    b.num[0] = 1;
+    for (; mask; mask >>= 1) {
+        bn_cpy(&d, &b);
+        bn_lshift(&d, 1);
+        bn_diff(&d, &a, &d);
+        bn_mult(&a, &d, &c);
+
+        bn_mult(&a, &a, &d);
+        bn_mult(&b, &b, &a);
+        bn_add(&d, &a, &d);
+
+        if (mask & k) {
+            bn_add(&c, &d, &b);
+            bn_swap(&a, &d);
+        } else {
+            bn_swap(&c, &a);
+            bn_swap(&d, &b);
+        }
     }
 
+    goto end;
 tail:
     bn_free(&a);
+end:
     bn_free(&b);
     bn_free(&c);
-    return 0;
+    bn_free(&d);
+    return a;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
@@ -72,7 +94,23 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_sequence(*offset);
+    ktime_t kt;
+
+    kt = ktime_get();
+    bn ret = fib_fast_doubling(*offset);
+    kt = ktime_sub(ktime_get(), kt);
+
+    if (!ret.num)
+        goto end;
+
+    char *s = bn_to_string(&ret);
+    size_t len = strlen(s) + 1;
+    len = len > size ? size : len;
+    copy_to_user(buf, s, len);
+    kfree(s);
+
+end:
+    return (ssize_t) ktime_to_ns(kt);
 }
 
 /* write operation is skipped */

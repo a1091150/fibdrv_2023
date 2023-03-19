@@ -35,3 +35,7 @@ out
 ufib.out
 # Editor
 .vscode
+
+# Output files and images
+*.png
+*.ut

@@ -42,4 +42,8 @@ check: all
 	@scripts/verify.py
 
 ufib:
-	$(CC) -o ufib.c bn.c -D _USERSPACEFIB
+	$(CC) -g ufib.c bn.c -o ufib.out -D _USERSPACEFIB
+
+uplot: ufib
+	./ufib.out > ./ufib_time.ut
+	gnuplot scripts/ufib_plot.gp

@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <time.h>
 #include "bn.h"
+#define NANOSECOND(x) ((x).tv_sec * 1e9 + (x).tv_nsec)
 char *bn_to_string(const bn *src)
 {
     // log10(x) = log2(x) / log2(10) ~= log2(x) / 3.322
@@ -59,7 +61,6 @@ static void test_bn_fast_doubling(__u64 k)
     a.num[0] = 0;
     b.num[0] = 1;
 
-    __u64 current = 0;
     for (; mask; mask >>= 1) {
         bn_cpy(&d, &b);
         bn_lshift(&d, 1);
@@ -71,24 +72,13 @@ static void test_bn_fast_doubling(__u64 k)
         bn_add(&d, &a, &d);
 
         if (mask & k) {
-            current = (current << 1) + 1;
             bn_add(&c, &d, &b);
             bn_swap(&a, &d);
         } else {
-            current <<= 1;
             bn_swap(&c, &a);
             bn_swap(&d, &b);
         }
-
-        printf("%lu\n", current);
-        bn_print(&a);
-        bn_print(&b);
-        printf("\n");
     }
-
-    bn_print(&a);
-    bn_print(&b);
-    printf("\n");
 tail:
     bn_free(&a);
     bn_free(&b);
@@ -261,14 +251,24 @@ tail:
 
 int main()
 {
-    test_bn_cmp();
-    test_bn_diff(95);
-    test_bn_add(94);
-    test_bn_cpy();
-    test_bn_lshift();
-    test_bn_add(92);
-    test_bn_mult();
-    test_bn_fast_doubling(92);
-    // test_bn_fast_doubling(93);
+    while (0) {
+        test_bn_cmp();
+        test_bn_diff(95);
+        test_bn_add(94);
+        test_bn_cpy();
+        test_bn_lshift();
+        test_bn_add(92);
+        test_bn_mult();
+        test_bn_fast_doubling(93);
+    };
+
+    struct timespec t1, t2;
+    for (int i = 0; i < 500; i++) {
+        clock_gettime(CLOCK_MONOTONIC, &t1);
+        test_bn_fast_doubling(i);
+        clock_gettime(CLOCK_MONOTONIC, &t2);
+        long long ut = (long long) (NANOSECOND(t2) - NANOSECOND(t1));
+        printf("%d %lld\n", i, ut);
+    }
     return 0;
 }

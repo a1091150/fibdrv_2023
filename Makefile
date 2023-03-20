@@ -45,6 +45,13 @@ check: all
 ufib:
 	$(CC) -g ufib.c bn.c -o ufib.out -D _USERSPACEFIB
 
+uperf: ufib
+	sudo perf record -g --call-graph dwarf ./ufib.out
+	sudo perf report --stdio
+
+ustat: ufib
+	sudo perf stat -r 10 -e cycles,instructions,cache-misses,cache-references,branch-instructions,branch-misses ./ufib.out
+
 uplot: ufib
 	./ufib.out > ./ufib_time.ut
 	gnuplot scripts/ufib_plot.gp

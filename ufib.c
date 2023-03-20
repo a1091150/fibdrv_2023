@@ -233,10 +233,10 @@ int main()
     struct timespec t1, t2;
     for (int i = 0; i < 500; i++) {
         clock_gettime(CLOCK_MONOTONIC, &t1);
-        test_bn_fast_doubling(i);
+        test_bn_fast_doubling(500);
         clock_gettime(CLOCK_MONOTONIC, &t2);
         long long ut = (long long) (NANOSECOND(t2) - NANOSECOND(t1));
-        printf("%d %lld\n", i, ut);
+        // printf("%d %lld\n", i, ut);
     }
     return 0;
 }

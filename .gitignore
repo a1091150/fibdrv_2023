@@ -39,3 +39,4 @@ ufib.out
 # Output files and images
 *.png
 *.ut
+perf.data

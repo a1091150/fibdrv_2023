@@ -40,3 +40,4 @@ ufib.out
 *.png
 *.ut
 perf.data
+perf.data.old
